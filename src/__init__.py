@@ -5,4 +5,3 @@ __version__ = 0.2
 # LQTAgridPy/
 # 	__init__.py
 # 	grid_generate.py
-	

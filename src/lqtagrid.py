@@ -1,9 +1,9 @@
-#!/usr/bin/env
+#!/usr/bin/env python3
 # coding: utf-8
 
 import click
 import grid_generate
-#from . import grid_generate
+# from . import grid_generate
 
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -55,6 +55,7 @@ def run(mols, coordinates, dimensions, atom, step, output):
 
     More: https://github.com/rougeth/LQTAgridPy
     '''
+    print('hello')
     grid = grid_generate.GridGenerate(
         coordinates,
         dimensions,
@@ -62,7 +63,7 @@ def run(mols, coordinates, dimensions, atom, step, output):
         mols,
         step
     )
-    grid.saveGrid(output)
+    # grid.saveGrid(output)
 
 
 if __name__ == '__main__':
