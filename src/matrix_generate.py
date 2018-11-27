@@ -2,10 +2,7 @@
 # coding: utf-8
 
 import math
-import re
 import os
-import utils
-# from . import utils
 import numpy as np
 
 
@@ -107,13 +104,13 @@ class MatrixGenerate():
         self.DimZ = dimZ
         self.natp = len(atp)
 
-        f = 138.935485
+        f = 138.935485  # conversion factor
+
         nframes = self.m / self.numberElements
 
         self.gridCoulomb = {}
         self.gridLJ = {}
 
-        count = 0
         # esse loop roda sobre o número de sondas escolhidas
         for h in range(self.natp):
             # carrega-se as respectivas constantes
@@ -123,8 +120,8 @@ class MatrixGenerate():
             Vlj = 0
             Vc = 0
             npontos = 0
-            # r1 = []
-            r1 = [0.0, 0.0, 0.0]
+
+            r1 = np.zeros(3)
             self.gridCoulomb[atp[h]] = {}
             self.gridLJ[atp[h]] = {}
 
@@ -146,20 +143,19 @@ class MatrixGenerate():
                         npontos += 1
                         self.gridCoulomb[atp[h]][i][j][k] = {}
                         self.gridLJ[atp[h]][i][j][k] = {}
-                        count += 1
+
                         # geradas as coordenadas cartesianas começa o loop
                         # sobre os átomos do PAC para calcular os descriotres
                         # com base na distância entre a sonda e os átomos
                         for l in range(self.m):
-                            r = utils.Distance(r1, self.X[l]) / 10
+                            r = np.linalg.norm(r1 - self.X[l]) / 10
                             index = l % self.numberElements
                             c6ij = math.sqrt(c6a * self.c6[index])
                             c12ij = math.sqrt(c12a * self.c12[index])
 
                             if r != 0:
-                                Vlj = Vlj + (c12ij / (math.pow(r, 12))) - \
-                                    (c6ij / (math.pow(r, 6)))
-                                Vc = Vc + f * float(q1) * \
+                                Vlj += (c12ij / (r ** 12)) - (c6ij / (r ** 6))
+                                Vc += f * float(q1) * \
                                     float(self.cargas[index]) / r
                             else:
                                 Vlj = float("inf")
@@ -173,13 +169,13 @@ class MatrixGenerate():
         textValuesLj = ""
         coulombMatrix = []
         ljMatrix = []
-        count0 = 0
         count = 0
         for h in self.gridCoulomb:
             for i in self.gridCoulomb[h]:
                 for j in self.gridCoulomb[h][i]:
                     for k in self.gridCoulomb[h][i][j]:
-                        textValuesCoulomb += "%g\t" % (self.gridCoulomb[h][i][j][k])
+                        textValuesCoulomb += "%g\t" % \
+                            (self.gridCoulomb[h][i][j][k])
                         textValuesLj += "%g\t" % (self.gridLJ[h][i][j][k])
                         coulombMatrix.append(self.gridCoulomb[h][i][j][k])
                         ljMatrix.append(self.gridLJ[h][i][j][k])
