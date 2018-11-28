@@ -8,19 +8,22 @@ from scipy.spatial import ConvexHull
 import generate_points
 
 
+def isclose(a, b, rel_tol=1e-9, abs_tol=0.0):
+    return abs(a - b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
+
+
 class MatrixGenerate():
 
     def __init__(self, fileGro, fileTop, fileItp):
         # print('hello')
         self.setX(fileGro)
         self.atomsTypes(fileTop)
-        # return
         self.loadConstants(fileItp)
         self.loadAP()
         self.determineConstants()
 
     def setX(self, fileName):
-        print(fileName)
+        # print(fileName)
         start_coords = 3
 
         self.c6 = []
@@ -47,18 +50,20 @@ class MatrixGenerate():
         self.maximos = np.amax(self.X, axis=0)
 
     def atomsTypes(self, fileName):
-        self.types = []
-        self.cargas = []
+        print(fileName)
         with open(fileName) as f:
             line = f.readline()
             while '[ atoms ]' not in line:
                 line = f.readline()
             next(f)
+
+            self.types = []
+            self.cargas = np.empty(self.numberElements)
             for i in range(self.numberElements):
                 line = f.readline()
                 atoms = line.split()
                 self.types.append(atoms[1])
-                self.cargas.append(float(atoms[6]))
+                self.cargas[i] = atoms[6]
 
     def loadConstants(self, fileName):
         self.typeConstants = []
@@ -99,6 +104,8 @@ class MatrixGenerate():
             index = self.typeConstants.index(c_type)
             self.c6.append(self.constantc6[index])
             self.c12.append(self.constantc12[index])
+        self.c6 = np.array(self.c6)
+        self.c12 = np.array(self.c12)
 
     def gridGenerate(self, dimX, dimY, dimZ, atp, x0, y0, z0, step):
         self.DimX = dimX
@@ -173,46 +180,37 @@ class MatrixGenerate():
 
         nframes = self.m / self.numberElements
 
-        self.hullCoulombList = {}
-        self.hullLJList = {}
+        # self.hullCoulombList = {}
+        # self.hullLJList = {}
 
         # esse loop roda sobre o número de sondas escolhidas
         for h in range(self.natp):
             # carrega-se as respectivas constantes
-            q1 = self.ap[atp[h]]['carga']  # self.cargasap[elem]
-            c6a = self.ap[atp[h]]['c6']  # self.c6ap[elem]
-            c12a = self.ap[atp[h]]['c12']  # self.c12ap[elem]
+            q1 = float(self.ap[atp[h]]['carga'])  # self.cargasap[elem]
+            c6a = float(self.ap[atp[h]]['c6'])  # self.c6ap[elem]
+            c12a = float(self.ap[atp[h]]['c12'])  # self.c12ap[elem]
 
-            hull = ConvexHull(self.matrix.X)
-            all_points = generate_points.generate_points(hull)
+            hull = ConvexHull(self.X)
+            self.points = generate_points.generate_points(hull, step,
+                                                          initial_distance,
+                                                          total_layers,
+                                                          delta_r)
 
-            self.hullCoulombList[atp[h]] = np.empty(all_points)
-            self.hullLJList[atp[h]] = np.empty(all_points)
-            # aqui começa o loop que gera as coordenadas cartesianas
-            # acho que você pode gerar os pontos com o fecho convexo e
-            # substituir esses 3 loops por um loop sobre os pontos gerados
-            for p_index, point in enumerate(all_points):
-                Vlj = 0
-                Vc = 0
+            self.hullCoulombList = np.empty(self.points.shape[0])
+            self.hullLJList = np.empty(self.points.shape[0])
 
-                # geradas as coordenadas cartesianas começa o loop
-                # sobre os átomos do PAC para calcular os descriotres
-                # com base na distância entre a sonda e os átomos
-                for i, atom in range(self.m):
-                    r = np.linalg.norm(point - atom) / 10
-                    index = i % self.numberElements
-                    c6ij = math.sqrt(c6a * self.c6[index])
-                    c12ij = math.sqrt(c12a * self.c12[index])
+            for p_index, point in enumerate(self.points):
+                r = np.linalg.norm(point - self.X, axis=1) / 10
+                c6ij = np.sqrt(c6a * self.c6)
+                c12ij = np.sqrt(c12a * self.c12)
 
-                    if r != 0:
-                        Vlj += (c12ij / (r ** 12)) - (c6ij / (r ** 6))
-                        Vc += f * float(q1) * float(self.cargas[index]) / r
-                    else:
-                        Vlj = float("inf")
-                        Vc = float("inf")
+                r6 = r ** 6
+                Vlj = ((c12ij / (r6 ** 2).reshape(int(nframes), self.numberElements)) -
+                            (c6ij / r6.reshape(int(nframes), self.numberElements))).ravel()
+                Vc = f * q1 * (self.cargas / r.reshape(int(nframes), self.numberElements)).ravel()
 
-                self.hullCoulombList[p_index] = (Vc / nframes)
-                self.hullLJList[p_index] = (Vlj / math.sqrt(nframes))
+                self.hullCoulombList[p_index] = Vc.sum() / nframes
+                self.hullLJList[p_index] = Vlj.sum() / math.sqrt(nframes)
 
     def getMatrix(self):
         textValuesCoulomb = ""
@@ -233,20 +231,5 @@ class MatrixGenerate():
         return textValuesCoulomb, textValuesLj, coulombMatrix, ljMatrix
 
 # TODO
-    # def getHullList(self):
-    #     textValuesCoulomb = ""
-    #     textValuesLj = ""
-    #     coulombMatrix = []
-    #     ljMatrix = []
-    #     count = 0
-    #     for h in self.gridCoulomb:
-    #         for i in self.gridCoulomb[h]:
-    #             for j in self.gridCoulomb[h][i]:
-    #                 for k in self.gridCoulomb[h][i][j]:
-    #                     textValuesCoulomb += "%g\t" % \
-    #                         (self.gridCoulomb[h][i][j][k])
-    #                     textValuesLj += "%g\t" % (self.gridLJ[h][i][j][k])
-    #                     coulombMatrix.append(self.gridCoulomb[h][i][j][k])
-    #                     ljMatrix.append(self.gridLJ[h][i][j][k])
-    #                     count += 1
-    #     return textValuesCoulomb, textValuesLj, coulombMatrix, ljMatrix
+    def getHullList(self):
+        return self.points, self.hullCoulombList, self.hullLJList

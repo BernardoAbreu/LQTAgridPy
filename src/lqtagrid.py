@@ -3,6 +3,7 @@
 
 import click
 import grid_generate
+import hull_generate
 # from . import grid_generate
 
 
@@ -16,32 +17,53 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
               required=True,
               help='files path, gro and itp.'
               )
-@click.option('--coordinates', '-c',
-              metavar='<x> <y> <z>',
-              type=int,
-              nargs=3,
-              required=False,
-              help='Coordinates of the box.'
-              )
-@click.option('--dimensions', '-d',
-              metavar='<x> <y> <z>',
-              type=int,
-              nargs=3,
-              required=False,
-              help='Dimensions of the box.'
-              )
+# @click.option('--coordinates', '-c',
+#               metavar='<x> <y> <z>',
+#               type=int,
+#               nargs=3,
+#               required=False,
+#               help='Coordinates of the box.'
+#               )
+# @click.option('--dimensions', '-d',
+#               metavar='<x> <y> <z>',
+#               type=int,
+#               nargs=3,
+#               required=False,
+#               help='Dimensions of the box.'
+#               )
 @click.option('--atom', '-a',
               metavar='[atom]',
               multiple=True,
               required=True,
               help='Probe.'
               )
-@click.option('--step', '-s',
+# @click.option('--step', '-s',
+#               metavar='<x>',
+#               type=float,
+#               nargs=1,
+#               required=True,
+#               help='Steps for navegation on matrix.'
+#               )
+@click.option('--initial', '-i',
               metavar='<x>',
               type=float,
               nargs=1,
               required=True,
-              help='Steps for navegation on matrix.'
+              help='Initial distance from molecule hull.'
+              )
+@click.option('--angle', '-d',
+              metavar='<x>',
+              type=int,
+              nargs=1,
+              required=True,
+              help='Angle step.'
+              )
+@click.option('--radius', '-r',
+              metavar='<x>',
+              type=float,
+              nargs=1,
+              required=True,
+              help='Radius step.'
               )
 @click.option('--output', '-o',
               metavar='<path_output>',
@@ -49,20 +71,22 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
               required=True,
               help='Output matrix file.'
               )
-def run(mols, coordinates, dimensions, atom, step, output):
+def run(mols, atom, angle, initial, radius, output):
     '''LQTAgridPy is a python version of LQTAgrid, a practical application of
     4D QSAR analysis methodology developed at University of Campinas.
 
     More: https://github.com/rougeth/LQTAgridPy
     '''
-    print('hello')
-    grid = grid_generate.GridGenerate(
-        coordinates,
-        dimensions,
-        atom,
-        mols,
-        step
-    )
+    # print('hello')
+    # grid = grid_generate.GridGenerate(
+    #     coordinates,
+    #     dimensions,
+    #     atom,
+    #     mols,
+    #     step
+    # )
+    hull = hull_generate.HullGenerate(atom, mols, angle, initial, radius, 7)
+    hull.saveGrid(output)
     # grid.saveGrid(output)
 
 

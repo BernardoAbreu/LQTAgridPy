@@ -69,15 +69,11 @@ def get_coord_point_list(hull, centroid, point, total_layers,
 def generate_points(hull, step, initial_distance, total_layers, delta_r):
     step = 30
     initial_distance = 2.5
-    total_layers = 7
-    delta_r = 1
-
-    all_points = []
-    radius = 1
-
+    # total_layers
+    # delta_r
     centroid = np.mean(hull.points[hull.vertices, :], axis=0)
 
-    cur_point = centroid - sphe2cart(radius, 0, 0)
+    cur_point = centroid - sphe2cart(1, 0, 0)
     new_cur_point = centroid - cur_point
     r, theta, phi = cart2sphe(*new_cur_point)
 
@@ -87,7 +83,7 @@ def generate_points(hull, step, initial_distance, total_layers, delta_r):
     for theta in range(step, 180, step):
         for phi in range(0, 360, step):
             # move center of spherical coordinate to center of convex hull
-            cur_point = centroid - sphe2cart(radius,
+            cur_point = centroid - sphe2cart(1,
                                              np.radians(theta),
                                              np.radians(phi))
             all_points += get_coord_point_list(hull, centroid, cur_point,

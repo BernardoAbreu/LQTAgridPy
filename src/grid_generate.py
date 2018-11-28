@@ -11,20 +11,24 @@ import re
 class GridGenerate():
 
     def __init__(self, coordinates, dimensions, atp, directory, step):
-        self.n_pat = re.compile(r'(.*[0-9]+).+')
+        n_pat = re.compile(r'(.*[0-9]+).+')
         # dataFile = open(files).read().splitlines()
         dataFile = os.listdir(directory)
         self.molecules = [x.replace('.gro', '')
                           for x in dataFile if x.endswith('gro')]
-        self.molecules.sort(self.__sort_replace)
+
+        def __sort_replace(x):
+            return n_pat.search(x).group(1)
+
+        self.molecules.sort(__sort_replace)
         dataFile = [directory + '/' + fileName for fileName in dataFile]
 
         groFiles = [x for x in dataFile if x.endswith('gro')]
-        groFiles.sort(self.__sort_replace)
+        groFiles.sort(key=__sort_replace)
         topFiles = [x for x in dataFile if x.endswith('top')]
-        topFiles.sort(self.__sort_replace)
+        topFiles.sort(key=__sort_replace)
         itpFiles = [x for x in dataFile if x.endswith('nb.itp')]
-        itpFiles.sort(self.__sort_replace)
+        itpFiles.sort(key=__sort_replace)
 
         matrices = []
 
@@ -81,6 +85,3 @@ class GridGenerate():
                             index=self.molecules)
         df = dfCoulomb.join(dfLj)
         df.to_csv(output + '.csv', sep=';')
-
-    def __sort_replace(self, x):
-        return self.n_pat.search(x).group(1)
