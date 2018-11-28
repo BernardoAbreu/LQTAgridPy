@@ -4,6 +4,8 @@
 import math
 import os
 import numpy as np
+from scipy.spatial import ConvexHull
+import generate_points
 
 
 class MatrixGenerate():
@@ -164,6 +166,54 @@ class MatrixGenerate():
                         self.gridCoulomb[atp[h]][i][j][k] = Vc / nframes
                         self.gridLJ[atp[h]][i][j][k] = Vlj / math.sqrt(nframes)
 
+    def hullGenerate(self, atp, step, initial_distance, total_layers, delta_r):
+        self.natp = len(atp)
+
+        f = 138.935485  # conversion factor
+
+        nframes = self.m / self.numberElements
+
+        self.hullCoulombList = {}
+        self.hullLJList = {}
+
+        # esse loop roda sobre o número de sondas escolhidas
+        for h in range(self.natp):
+            # carrega-se as respectivas constantes
+            q1 = self.ap[atp[h]]['carga']  # self.cargasap[elem]
+            c6a = self.ap[atp[h]]['c6']  # self.c6ap[elem]
+            c12a = self.ap[atp[h]]['c12']  # self.c12ap[elem]
+
+            hull = ConvexHull(self.matrix.X)
+            all_points = generate_points.generate_points(hull)
+
+            self.hullCoulombList[atp[h]] = np.empty(all_points)
+            self.hullLJList[atp[h]] = np.empty(all_points)
+            # aqui começa o loop que gera as coordenadas cartesianas
+            # acho que você pode gerar os pontos com o fecho convexo e
+            # substituir esses 3 loops por um loop sobre os pontos gerados
+            for p_index, point in enumerate(all_points):
+                Vlj = 0
+                Vc = 0
+
+                # geradas as coordenadas cartesianas começa o loop
+                # sobre os átomos do PAC para calcular os descriotres
+                # com base na distância entre a sonda e os átomos
+                for i, atom in range(self.m):
+                    r = np.linalg.norm(point - atom) / 10
+                    index = i % self.numberElements
+                    c6ij = math.sqrt(c6a * self.c6[index])
+                    c12ij = math.sqrt(c12a * self.c12[index])
+
+                    if r != 0:
+                        Vlj += (c12ij / (r ** 12)) - (c6ij / (r ** 6))
+                        Vc += f * float(q1) * float(self.cargas[index]) / r
+                    else:
+                        Vlj = float("inf")
+                        Vc = float("inf")
+
+                self.hullCoulombList[p_index] = (Vc / nframes)
+                self.hullLJList[p_index] = (Vlj / math.sqrt(nframes))
+
     def getMatrix(self):
         textValuesCoulomb = ""
         textValuesLj = ""
@@ -181,3 +231,22 @@ class MatrixGenerate():
                         ljMatrix.append(self.gridLJ[h][i][j][k])
                         count += 1
         return textValuesCoulomb, textValuesLj, coulombMatrix, ljMatrix
+
+# TODO
+    # def getHullList(self):
+    #     textValuesCoulomb = ""
+    #     textValuesLj = ""
+    #     coulombMatrix = []
+    #     ljMatrix = []
+    #     count = 0
+    #     for h in self.gridCoulomb:
+    #         for i in self.gridCoulomb[h]:
+    #             for j in self.gridCoulomb[h][i]:
+    #                 for k in self.gridCoulomb[h][i][j]:
+    #                     textValuesCoulomb += "%g\t" % \
+    #                         (self.gridCoulomb[h][i][j][k])
+    #                     textValuesLj += "%g\t" % (self.gridLJ[h][i][j][k])
+    #                     coulombMatrix.append(self.gridCoulomb[h][i][j][k])
+    #                     ljMatrix.append(self.gridLJ[h][i][j][k])
+    #                     count += 1
+    #     return textValuesCoulomb, textValuesLj, coulombMatrix, ljMatrix
