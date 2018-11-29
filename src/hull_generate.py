@@ -12,20 +12,20 @@ class HullGenerate():
 
     def __init__(self, atp, directory, delta_angle, initial_distance, delta_r,
                  total_layers):
-        self.n_pat = re.compile(r'(.*[0-9]+).+')
+        # self.n_pat = re.compile(r'(.*[0-9]+).+')
         # dataFile = open(files).read().splitlines()
         dataFile = os.listdir(directory)
-        self.molecules = [x.replace('.gro', '')
-                          for x in dataFile if x.endswith('gro')]
-        self.molecules = np.array(sorted(self.molecules, key=self.__sort_replace))
+        molecules = [x.replace('.gro', '')
+                     for x in dataFile if x.endswith('gro')]
+        self.molecules = np.array(sorted(molecules, key=lambda x: x[:-4]))
         dataFile = [directory + '/' + fileName for fileName in dataFile]
 
         groFiles = [x for x in dataFile if x.endswith('gro')]
-        groFiles.sort(key=self.__sort_replace)
+        groFiles.sort(key=lambda x: x[:-8])
         topFiles = [x for x in dataFile if x.endswith('top')]
-        topFiles.sort(key=self.__sort_replace)
+        topFiles.sort(key=lambda x: x[:-4])
         itpFiles = [x for x in dataFile if x.endswith('nb.itp')]
-        itpFiles.sort(key=self.__sort_replace)
+        itpFiles.sort(key=lambda x: x[:-6])
 
         matrices = [matrix_generate.MatrixGenerate(gro, top, itp)
                     for gro, top, itp in zip(groFiles, topFiles, itpFiles)]
@@ -33,12 +33,10 @@ class HullGenerate():
         self.cCoulomb = []
         self.cLJ = []
 
-        delta_r /= 10
-        initial_distance /= 10
         self.coulombMatrix = []
         self.ljMatrix = []
         self.points = []
-        for mols, matrix in zip(self.molecules[:5], matrices[:5]):
+        for mols, matrix in zip(self.molecules, matrices):
             print('Calculating ' + mols)
             matrix.hullGenerate(atp, delta_angle, initial_distance,
                                 total_layers, delta_r)
@@ -57,12 +55,9 @@ class HullGenerate():
 
     def saveGrid(self, output):
         np.savetxt(output + '.mol', self.molecules, fmt='%s')
-        dfCoulomb = pd.DataFrame(self.coulombMatrix, index=self.molecules[:5])
-        dfLj = pd.DataFrame(self.ljMatrix, index=self.molecules[:5])
-        dfPoints = pd.DataFrame(self.points, index=self.molecules[:5])
+        dfCoulomb = pd.DataFrame(self.coulombMatrix, index=self.molecules)
+        dfLj = pd.DataFrame(self.ljMatrix, index=self.molecules)
+        dfPoints = pd.DataFrame(self.points, index=self.molecules)
         dfCoulomb.to_csv(output + '_C.csv', sep=';', header=False)
         dfLj.to_csv(output + '_LJ.csv', sep=';', header=False)
         dfPoints.to_csv(output + '_Points.csv', sep=';', header=False)
-
-    def __sort_replace(self, x):
-        return self.n_pat.search(x).group(1)

@@ -23,7 +23,7 @@ class MatrixGenerate():
         self.determineConstants()
 
     def setX(self, fileName):
-        # print(fileName)
+        print(fileName)
         start_coords = 3
 
         self.c6 = []
@@ -50,7 +50,7 @@ class MatrixGenerate():
         self.maximos = np.amax(self.X, axis=0)
 
     def atomsTypes(self, fileName):
-        print(fileName)
+        # print(fileName)
         with open(fileName) as f:
             line = f.readline()
             while '[ atoms ]' not in line:
@@ -59,9 +59,11 @@ class MatrixGenerate():
 
             self.types = []
             self.cargas = np.empty(self.numberElements)
+            # print(self.numberElements)
             for i in range(self.numberElements):
                 line = f.readline()
                 atoms = line.split()
+                # print(atoms)
                 self.types.append(atoms[1])
                 self.cargas[i] = atoms[6]
 
@@ -157,7 +159,7 @@ class MatrixGenerate():
                         # sobre os átomos do PAC para calcular os descriotres
                         # com base na distância entre a sonda e os átomos
                         for l in range(self.m):
-                            r = np.linalg.norm(r1 - self.X[l]) / 10
+                            r = np.linalg.norm(r1 - self.X[l]) / 10.
                             index = l % self.numberElements
                             c6ij = math.sqrt(c6a * self.c6[index])
                             c12ij = math.sqrt(c12a * self.c12[index])
@@ -180,15 +182,12 @@ class MatrixGenerate():
 
         nframes = self.m / self.numberElements
 
-        # self.hullCoulombList = {}
-        # self.hullLJList = {}
-
         # esse loop roda sobre o número de sondas escolhidas
         for h in range(self.natp):
             # carrega-se as respectivas constantes
-            q1 = float(self.ap[atp[h]]['carga'])  # self.cargasap[elem]
-            c6a = float(self.ap[atp[h]]['c6'])  # self.c6ap[elem]
-            c12a = float(self.ap[atp[h]]['c12'])  # self.c12ap[elem]
+            q1 = self.ap[atp[h]]['carga']
+            c6a = self.ap[atp[h]]['c6']
+            c12a = self.ap[atp[h]]['c12']
 
             hull = ConvexHull(self.X)
             self.points = generate_points.generate_points(hull, step,
@@ -199,18 +198,22 @@ class MatrixGenerate():
             self.hullCoulombList = np.empty(self.points.shape[0])
             self.hullLJList = np.empty(self.points.shape[0])
 
+            c6ij = np.sqrt(c6a * self.c6)
+            c12ij = np.sqrt(c12a * self.c12)
             for p_index, point in enumerate(self.points):
-                r = np.linalg.norm(point - self.X, axis=1) / 10
-                c6ij = np.sqrt(c6a * self.c6)
-                c12ij = np.sqrt(c12a * self.c12)
-
+                r = np.linalg.norm(point - self.X, axis=1) / 10.
                 r6 = r ** 6
-                Vlj = ((c12ij / (r6 ** 2).reshape(int(nframes), self.numberElements)) -
-                            (c6ij / r6.reshape(int(nframes), self.numberElements))).ravel()
-                Vc = f * q1 * (self.cargas / r.reshape(int(nframes), self.numberElements)).ravel()
+                Vlj = ((c12ij /
+                        (r6 ** 2).reshape(int(nframes), self.numberElements)) -
+                       (c6ij / r6.reshape(int(nframes), self.numberElements))
+                       ).ravel().sum()
 
-                self.hullCoulombList[p_index] = Vc.sum() / nframes
-                self.hullLJList[p_index] = Vlj.sum() / math.sqrt(nframes)
+                Vc = f * q1 * (self.cargas /
+                               r.reshape(int(nframes), self.numberElements)
+                               ).ravel().sum()
+
+                self.hullCoulombList[p_index] = Vc / nframes
+                self.hullLJList[p_index] = Vlj / math.sqrt(nframes)
 
     def getMatrix(self):
         textValuesCoulomb = ""

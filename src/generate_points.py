@@ -67,8 +67,8 @@ def get_coord_point_list(hull, centroid, point, total_layers,
 
 
 def generate_points(hull, step, initial_distance, total_layers, delta_r):
-    step = 30
-    initial_distance = 2.5
+    # step = 30
+    # initial_distance = 2.5
     # total_layers
     # delta_r
     centroid = np.mean(hull.points[hull.vertices, :], axis=0)

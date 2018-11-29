@@ -11,24 +11,24 @@ import re
 class GridGenerate():
 
     def __init__(self, coordinates, dimensions, atp, directory, step):
-        n_pat = re.compile(r'(.*[0-9]+).+')
+        # n_pat = re.compile(r'(.*[0-9]+).+')
         # dataFile = open(files).read().splitlines()
         dataFile = os.listdir(directory)
         self.molecules = [x.replace('.gro', '')
                           for x in dataFile if x.endswith('gro')]
 
-        def __sort_replace(x):
-            return n_pat.search(x).group(1)
+        # def __sort_replace(x):
+        #     return n_pat.search(x).group(1)
 
-        self.molecules.sort(__sort_replace)
+        self.molecules.sort(key=lambda x: x[:-4])
         dataFile = [directory + '/' + fileName for fileName in dataFile]
 
         groFiles = [x for x in dataFile if x.endswith('gro')]
-        groFiles.sort(key=__sort_replace)
+        groFiles.sort(key=lambda x: x[:-8])
         topFiles = [x for x in dataFile if x.endswith('top')]
-        topFiles.sort(key=__sort_replace)
+        topFiles.sort(key=lambda x: x[:-4])
         itpFiles = [x for x in dataFile if x.endswith('nb.itp')]
-        itpFiles.sort(key=__sort_replace)
+        itpFiles.sort(key=lambda x: x[:-6])
 
         matrices = []
 
