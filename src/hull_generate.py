@@ -58,6 +58,6 @@ class HullGenerate():
         dfCoulomb = pd.DataFrame(self.coulombMatrix, index=self.molecules)
         dfLj = pd.DataFrame(self.ljMatrix, index=self.molecules)
         dfPoints = pd.DataFrame(self.points, index=self.molecules)
-        dfCoulomb.to_csv(output + '_C.csv', sep=';', header=False)
-        dfLj.to_csv(output + '_LJ.csv', sep=';', header=False)
+        dfCoulomb.to_csv(output + '_C.csv', sep=';', header=False, index=False)
+        dfLj.to_csv(output + '_LJ.csv', sep=';', header=False, index=False)
         dfPoints.to_csv(output + '_Points.csv', sep=';', header=False)
