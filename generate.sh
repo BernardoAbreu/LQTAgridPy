@@ -8,6 +8,6 @@ for DATA in "${array[@]}"; do
 	for THETA in 10; do
 		mkdir $DATA
 		echo "Running ${DATA} dataset with theta=${THETA}"
-		python -u src/lqtagrid.py --mols "Datasets/${DATA}" -a NH3+ -r 1.0 -d $THETA -i 2.5 -o "${DATA}/d${THETA}"
+		python -u src/lqtagrid_2.py --mols "Datasets/${DATA}" -a NH3+ -r 1.0 -d $THETA -i 2.5 -o "${DATA}/d${THETA}"
 	done
 done
