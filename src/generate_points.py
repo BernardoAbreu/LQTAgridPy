@@ -74,9 +74,8 @@ def generate_points(hull, step, initial_distance, total_layers, delta_r):
     centroid = np.mean(hull.points[hull.vertices, :], axis=0)
 
     cur_point = centroid - sphe2cart(1, 0, 0)
-    new_cur_point = centroid - cur_point
-    r, theta, phi = cart2sphe(*new_cur_point)
 
+    # Adicionar pontos para theta = 0
     all_points = get_coord_point_list(hull, centroid, cur_point, total_layers,
                                       initial_distance, delta_r)
 
@@ -86,8 +85,16 @@ def generate_points(hull, step, initial_distance, total_layers, delta_r):
             cur_point = centroid - sphe2cart(1,
                                              np.radians(theta),
                                              np.radians(phi))
-            all_points += get_coord_point_list(hull, centroid, cur_point,
-                                               total_layers, initial_distance,
-                                               delta_r)
+            all_points.extend(get_coord_point_list(hull, centroid, cur_point,
+                                                   total_layers,
+                                                   initial_distance,
+                                                   delta_r))
+
+    cur_point = centroid - sphe2cart(1, 180, 0)
+
+    # Adicionar pontos para theta = 0
+    all_points.extend(get_coord_point_list(hull, centroid, cur_point,
+                                           total_layers, initial_distance,
+                                           delta_r))
 
     return np.array(all_points)
